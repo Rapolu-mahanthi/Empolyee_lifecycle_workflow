@@ -1,0 +1,14 @@
+-- SQLite starter schema. Run: sqlite3 lifecycle.db < schema.sql
+PRAGMA foreign_keys = ON;
+CREATE TABLE Department(department_id TEXT PRIMARY KEY, name TEXT NOT NULL, cost_center TEXT UNIQUE NOT NULL);
+CREATE TABLE Role(role_id TEXT PRIMARY KEY, title TEXT NOT NULL, department_id TEXT NOT NULL REFERENCES Department(department_id), access_template TEXT NOT NULL);
+CREATE TABLE Manager(manager_id TEXT PRIMARY KEY, name TEXT NOT NULL, department_id TEXT NOT NULL REFERENCES Department(department_id), email TEXT UNIQUE NOT NULL);
+CREATE TABLE Employee(employee_id TEXT PRIMARY KEY, first_name TEXT NOT NULL, last_name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, role_id TEXT NOT NULL REFERENCES Role(role_id), department_id TEXT NOT NULL REFERENCES Department(department_id), manager_id TEXT NOT NULL REFERENCES Manager(manager_id), employment_type TEXT NOT NULL CHECK(employment_type IN ('employee','contractor')), hire_date TEXT NOT NULL, start_date TEXT NOT NULL, termination_date TEXT, employment_status TEXT NOT NULL CHECK(employment_status IN ('active','pending','terminated')));
+CREATE TABLE OnboardingCase(onboarding_case_id TEXT PRIMARY KEY, employee_id TEXT NOT NULL REFERENCES Employee(employee_id), case_status TEXT NOT NULL, created_date TEXT NOT NULL, target_start_date TEXT NOT NULL);
+CREATE TABLE Task(task_id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES OnboardingCase(onboarding_case_id), employee_id TEXT NOT NULL REFERENCES Employee(employee_id), task_name TEXT NOT NULL, owner TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, due_date TEXT NOT NULL, completed_at TEXT);
+CREATE TABLE Dependency(dependency_id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES Task(task_id), prerequisite_task_id TEXT NOT NULL REFERENCES Task(task_id), CHECK(task_id <> prerequisite_task_id));
+CREATE TABLE AccessRole(access_role_id TEXT PRIMARY KEY, role_name TEXT NOT NULL, system_name TEXT NOT NULL, risk_level TEXT NOT NULL);
+CREATE TABLE AccessGrant(grant_id TEXT PRIMARY KEY, employee_id TEXT NOT NULL REFERENCES Employee(employee_id), access_role_id TEXT NOT NULL REFERENCES AccessRole(access_role_id), granted_at TEXT NOT NULL, approved INTEGER NOT NULL, revoked_at TEXT, grant_status TEXT NOT NULL CHECK(grant_status IN ('active','revoked')));
+CREATE TABLE Asset(asset_id TEXT PRIMARY KEY, asset_type TEXT NOT NULL, serial_number TEXT UNIQUE NOT NULL, asset_status TEXT NOT NULL, assigned_employee_id TEXT REFERENCES Employee(employee_id), assigned_date TEXT, recovered_date TEXT);
+CREATE TABLE OffboardingCase(offboarding_case_id TEXT PRIMARY KEY, employee_id TEXT NOT NULL REFERENCES Employee(employee_id), termination_date TEXT NOT NULL, case_status TEXT NOT NULL, reason TEXT);
+CREATE TABLE AuditEvent(event_id TEXT PRIMARY KEY, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, event_type TEXT NOT NULL, event_date TEXT NOT NULL, actor TEXT NOT NULL, details TEXT);
